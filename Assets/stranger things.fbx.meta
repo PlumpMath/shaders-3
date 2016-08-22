@@ -1,82 +1,15 @@
 fileFormatVersion: 2
-guid: d0e5c6080cec40842a0e617f88481602
-timeCreated: 1470854018
+guid: 7b7f5c940484110429b3de6760c5d570
+timeCreated: 1471818107
 licenseType: Free
 ModelImporter:
   serializedVersion: 19
   fileIDToRecycleName:
     100000: //RootNode
-    100002: Suzanne
-    100004: Torus
-    100006: Icosphere
-    100008: Cylinder
-    100010: NurbsPath
-    100012: fern
-    100014: Sphere
-    100016: NurbsPath.001
-    100018: twister
-    100020: blob
-    100022: curve
-    100024: monkey
-    100026: sphere
-    100028: torus
     400000: //RootNode
-    400002: Suzanne
-    400004: Torus
-    400006: Icosphere
-    400008: Cylinder
-    400010: NurbsPath
-    400012: fern
-    400014: Sphere
-    400016: NurbsPath.001
-    400018: twister
-    400020: blob
-    400022: curve
-    400024: monkey
-    400026: sphere
-    400028: torus
-    2300000: Suzanne
-    2300002: Torus
-    2300004: Icosphere
-    2300006: Cylinder
-    2300008: NurbsPath
-    2300010: fern
-    2300012: Sphere
-    2300014: NurbsPath.001
-    2300016: twister
-    2300018: blob
-    2300020: curve
-    2300022: monkey
-    2300024: sphere
-    2300026: torus
-    3300000: Suzanne
-    3300002: Torus
-    3300004: Icosphere
-    3300006: Cylinder
-    3300008: NurbsPath
-    3300010: fern
-    3300012: Sphere
-    3300014: NurbsPath.001
-    3300016: twister
-    3300018: blob
-    3300020: curve
-    3300022: monkey
-    3300024: sphere
-    3300026: torus
-    4300000: Suzanne
-    4300002: Torus
-    4300004: Icosphere
-    4300006: NurbsPath
-    4300008: Cylinder
-    4300010: fern
-    4300012: Sphere
-    4300014: NurbsPath.001
-    4300016: twister
-    4300018: curve
-    4300020: sphere
-    4300022: torus
-    4300024: monkey
-    4300026: blob
+    2300000: //RootNode
+    3300000: //RootNode
+    4300000: eggo
   materials:
     importMaterials: 0
     materialName: 0
@@ -117,8 +50,8 @@ ModelImporter:
     secondaryUVPackMargin: 4
     useFileScale: 1
   tangentSpace:
-    normalSmoothAngle: 70
-    normalImportMode: 0
+    normalSmoothAngle: 50
+    normalImportMode: 1
     tangentImportMode: 3
   importAnimation: 1
   copyAvatar: 0

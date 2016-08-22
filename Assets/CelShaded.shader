@@ -1,7 +1,8 @@
-﻿Shader "Custom/CelShaded" {
+﻿Shader "Custom/Cel Shaded" {
 
 	Properties {
 		_ShadingMap ("Shading Map", 2D) = "white" {}
+		_ShadingOffsetMap ("Shading Offset Map", 2D) = "bump" {}
 		_NormalMap ("Normal Map", 2D) = "bump" {}
 		_TransparencyMap ("Transparency Map", 2D) = "white" {}
 		_TransparencyCutoff ("Transparency Cutoff", Range (0, 1)) = 0.5
@@ -24,16 +25,17 @@
 			#include "UnityCG.cginc"
 			#include "AutoLight.cginc"
 
-
 			struct v2f {
 				float4 pos : SV_POSITION;
 				float3 lightDirection : TEXCOORD0;
-				float2 uvNorm : TEXCOORD1;
-				float2 uvTrans : TEXCOORD2;
-				LIGHTING_COORDS(3, 4)
+				float2 uvOffset : TEXCOORD1;
+				float2 uvNorm : TEXCOORD2;
+				float2 uvTrans : TEXCOORD3;
+				LIGHTING_COORDS(4, 5)
 			};
 
 			sampler2D _ShadingMap; float4 _ShadingMap_ST;
+			sampler2D _ShadingOffsetMap; float4 _ShadingOffsetMap_ST;
 			sampler2D _NormalMap; float4 _NormalMap_ST;
 			sampler2D _TransparencyMap; float4 _TransparencyMap_ST;
 			half _TransparencyCutoff;
@@ -45,6 +47,7 @@
 				TANGENT_SPACE_ROTATION;
 				o.lightDirection = mul(rotation, ObjSpaceLightDir(v.vertex));
 				o.pos = UnityObjectToClipPos(v.vertex);
+				o.uvOffset = TRANSFORM_TEX(v.texcoord, _ShadingOffsetMap);
 				o.uvNorm = TRANSFORM_TEX(v.texcoord, _NormalMap);
 				o.uvTrans = TRANSFORM_TEX(v.texcoord, _TransparencyMap);
 				TRANSFER_VERTEX_TO_FRAGMENT(o);
@@ -67,8 +70,16 @@
 				attenuation *= _ShadowFactor;
 				attenuation = 1 - attenuation;
 				shading *= attenuation;
+				//shading offset mapping
+				float2 shadingOffset = 0;
+				shadingOffset.xy = tex2D(_ShadingOffsetMap, i.uvOffset).rg;
+				shadingOffset *= 2;
+				shadingOffset -= 1;
 				//shading mapping
-				float2 uvShading = TRANSFORM_TEX(float2(shading, 0), _ShadingMap);
+				float2 uvShading = float2(shading, 0);
+				uvShading += shadingOffset;
+				/*return fixed4(shadingOffset.x, 0, 0, 1);*/
+				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
 				return tex2D(_ShadingMap, uvShading);
 			}
 

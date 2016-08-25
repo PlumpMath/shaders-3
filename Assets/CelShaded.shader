@@ -61,24 +61,20 @@
 				float3 texNorm = UnpackNormal(tex2D(_NormalMap, i.uvNorm));// * _NormalWeight;
 				//lighting
 				float shading = dot(normalize(texNorm), normalize(i.lightDirection));
-				shading += 1;
-				shading /= 2;
+				shading = (shading + 1) / 2;
 				//shadows
-				float attenuation = LIGHT_ATTENUATION(i);
-				/*return attenuation;*/
-				attenuation = 1 - attenuation;
-				attenuation *= _ShadowFactor;
-				attenuation = 1 - attenuation;
-				shading *= attenuation;
+				float shadows = LIGHT_ATTENUATION(i);
+				shadows = 1 - shadows;
+				shadows *= _ShadowFactor;
+				shadows = 1 - shadows;
+				shading *= shadows;
 				//shading offset mapping
 				float2 shadingOffset = 0;
-				shadingOffset.xy = tex2D(_ShadingOffsetMap, i.uvOffset).rg;
-				shadingOffset *= 2;
-				shadingOffset -= 1;
+				float3 offset = tex2D(_ShadingOffsetMap, i.uvOffset);
+				shadingOffset.xy = (offset.xy * 2) - 1;
 				//shading mapping
-				float2 uvShading = float2(shading, 0);
+				float2 uvShading = float2(shading * offset.z, 0);
 				uvShading += shadingOffset;
-				/*return fixed4(shadingOffset.x, 0, 0, 1);*/
 				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
 				return tex2D(_ShadingMap, uvShading);
 			}

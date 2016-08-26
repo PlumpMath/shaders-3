@@ -1,9 +1,13 @@
 fileFormatVersion: 2
 guid: 0dfced7baebdd504aab93bf674d6c4fd
-timeCreated: 1471312227
+timeCreated: 1472237881
 licenseType: Free
 ShaderImporter:
-  defaultTextures: []
+  defaultTextures:
+  - _ShadingMap: {instanceID: 0}
+  - _ShadingOffsetMap: {fileID: 2800000, guid: 0d8d9c3eac9e971419c5edddaa2ac297, type: 3}
+  - _NormalMap: {instanceID: 0}
+  - _TransparencyMap: {instanceID: 0}
   userData: 
   assetBundleName: 
   assetBundleVariant: 

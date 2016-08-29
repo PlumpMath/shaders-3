@@ -8,15 +8,20 @@ ModelImporter:
     100000: bottom
     100002: //RootNode
     100004: cloud
+    100006: cloud2
     400000: bottom
     400002: //RootNode
     400004: cloud
+    400006: cloud2
     2300000: bottom
     2300002: cloud
+    2300004: cloud2
     3300000: bottom
     3300002: cloud
+    3300004: cloud2
     4300000: bottom
     4300002: cloud
+    4300004: cloud2
   materials:
     importMaterials: 0
     materialName: 0

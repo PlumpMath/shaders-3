@@ -7,6 +7,8 @@
 		_TransparencyMap ("Transparency Map", 2D) = "white" {}
 		_TransparencyCutoff ("Transparency Cutoff", Range (0, 1)) = 0.5
 		_ShadowFactor ("Shadow Factor", Float) = 0.5
+		[Toggle] _Dither ("Dither", Float) = 0
+		[PowerSlider(3)] _DitherSpread ("Dither Radius", Range(0, 1)) = 0.0
 	}
 	SubShader {
 
@@ -18,20 +20,24 @@
 
 			CGPROGRAM
 
+			#pragma shader_feature _DITHER_ON
+
+			#pragma target 3.0
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile_fwdbase
 
 			#include "UnityCG.cginc"
 			#include "AutoLight.cginc"
+			#include "CelShading.cginc"
 
 			struct v2f {
-				float4 pos : SV_POSITION;
-				float3 lightDirection : TEXCOORD0;
-				float2 uvOffset : TEXCOORD1;
-				float2 uvNorm : TEXCOORD2;
-				float2 uvTrans : TEXCOORD3;
-				LIGHTING_COORDS(4, 5)
+				float4 pos : TEXCOORD0;
+				float3 lightDirection : TEXCOORD1;
+				float2 uvOffset : TEXCOORD2;
+				float2 uvNorm : TEXCOORD3;
+				float2 uvTrans : TEXCOORD4;
+				LIGHTING_COORDS(5, 6)
 			};
 
 			sampler2D _ShadingMap; float4 _ShadingMap_ST;
@@ -41,12 +47,16 @@
 			half _TransparencyCutoff;
 			float _ShadowFactor;
 			float _ShadowOffset;
+		#if defined(_DITHER_ON)
+			float _DitherSpread;
+		#endif
 
-			v2f vert (appdata_full v) {
+			v2f vert(appdata_full v, out float4 outpos : SV_POSITION) {
 				v2f o;
+				o.pos = UnityObjectToClipPos(v.vertex);
+				outpos = o.pos;
 				TANGENT_SPACE_ROTATION;
 				o.lightDirection = mul(rotation, ObjSpaceLightDir(v.vertex));
-				o.pos = UnityObjectToClipPos(v.vertex);
 				o.uvOffset = TRANSFORM_TEX(v.texcoord, _ShadingOffsetMap);
 				o.uvNorm = TRANSFORM_TEX(v.texcoord, _NormalMap);
 				o.uvTrans = TRANSFORM_TEX(v.texcoord, _TransparencyMap);
@@ -54,7 +64,11 @@
 				return o;
 			}
 
-			fixed4 frag (v2f i) : SV_Target {
+			fixed4 frag(v2f i
+			#if defined(_DITHER_ON)
+				, UNITY_VPOS_TYPE screenPos : VPOS
+			#endif
+				) : SV_Target {
 				//alpha cutout
 				if (tex2D(_TransparencyMap, i.uvTrans).r < _TransparencyCutoff) discard;
 				//normal mapping
@@ -76,6 +90,12 @@
 				float2 uvShading = float2(shading * offset.z, 0);
 				uvShading += shadingOffset;
 				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
+			#if defined(_DITHER_ON)
+				screenPos.xy = floor(screenPos.xy) / 2;
+				float dither = frac(screenPos.x + screenPos.y) * 4;
+				dither -= 1;
+				uvShading += dither * _DitherSpread;
+			#endif
 				return tex2D(_ShadingMap, uvShading);
 			}
 

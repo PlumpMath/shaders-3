@@ -20,6 +20,7 @@ ModelImporter:
     100024: monkey
     100026: sphere
     100028: torus
+    100030: icoweb
     400000: //RootNode
     400002: Suzanne
     400004: Torus
@@ -35,6 +36,7 @@ ModelImporter:
     400024: monkey
     400026: sphere
     400028: torus
+    400030: icoweb
     2300000: Suzanne
     2300002: Torus
     2300004: Icosphere
@@ -49,6 +51,7 @@ ModelImporter:
     2300022: monkey
     2300024: sphere
     2300026: torus
+    2300028: icoweb
     3300000: Suzanne
     3300002: Torus
     3300004: Icosphere
@@ -63,6 +66,7 @@ ModelImporter:
     3300022: monkey
     3300024: sphere
     3300026: torus
+    3300028: icoweb
     4300000: Suzanne
     4300002: Torus
     4300004: Icosphere
@@ -77,6 +81,7 @@ ModelImporter:
     4300022: torus
     4300024: monkey
     4300026: blob
+    4300028: icoweb
   materials:
     importMaterials: 0
     materialName: 0

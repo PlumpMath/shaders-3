@@ -9,15 +9,43 @@
 		_ShadowFactor ("Shadow Factor", Float) = 0.5
 		[Toggle] _Dither ("Dither", Float) = 0
 		[PowerSlider(3)] _DitherSpread ("Dither Radius", Range(0, 1)) = 0.0
+		[KeywordEnum(None, Breath)] _Motion ("Motion Type", Float) = 0
+		_MotionAmount ("Motion Amount", Float) = 1
 	}
+
+
 	SubShader {
 
 		Tags { "RenderType" = "Opaque" }
 
+		CGINCLUDE
+
+		#pragma shader_feature _MOTION_NONE _MOTION_BREATH
+
+		#include "UnityCG.cginc"
+
+		sampler2D _TransparencyMap; float4 _TransparencyMap_ST;
+		half _TransparencyCutoff;
+
+	#if !defined(_MOTION_NONE)
+		float _MotionAmount;
+	#endif
+
+		inline appdata_full vertexmotion(appdata_full v) {
+			#if defined(_MOTION_BREATH)
+			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * (_SinTime.w * _MotionAmount));
+			#endif
+			return v;
+		}
+
+		#define DISCARD_CUTOUT(i) if (tex2D(_TransparencyMap, i.uvTrans).r < _TransparencyCutoff) discard
+
+		ENDCG
+
+
 		Pass {
 
 			Tags { "LightMode" = "ForwardBase" }
-
 			CGPROGRAM
 
 			#pragma shader_feature _DITHER_ON
@@ -27,9 +55,7 @@
 			#pragma fragment frag
 			#pragma multi_compile_fwdbase
 
-			#include "UnityCG.cginc"
 			#include "AutoLight.cginc"
-			#include "CelShading.cginc"
 
 			struct v2f {
 				float4 pos : TEXCOORD0;
@@ -43,8 +69,6 @@
 			sampler2D _ShadingMap; float4 _ShadingMap_ST;
 			sampler2D _ShadingOffsetMap; float4 _ShadingOffsetMap_ST;
 			sampler2D _NormalMap; float4 _NormalMap_ST;
-			sampler2D _TransparencyMap; float4 _TransparencyMap_ST;
-			half _TransparencyCutoff;
 			float _ShadowFactor;
 			float _ShadowOffset;
 		#if defined(_DITHER_ON)
@@ -52,6 +76,7 @@
 		#endif
 
 			v2f vert(appdata_full v, out float4 outpos : SV_POSITION) {
+				v = vertexmotion(v);
 				v2f o;
 				o.pos = UnityObjectToClipPos(v.vertex);
 				outpos = o.pos;
@@ -70,7 +95,7 @@
 			#endif
 				) : SV_Target {
 				//alpha cutout
-				if (tex2D(_TransparencyMap, i.uvTrans).r < _TransparencyCutoff) discard;
+				DISCARD_CUTOUT(i);
 				//normal mapping
 				float3 texNorm = UnpackNormal(tex2D(_NormalMap, i.uvNorm));// * _NormalWeight;
 				//lighting
@@ -115,22 +140,20 @@
 			#include "UnityCG.cginc"
 
 			struct v2f {
-				float2 uv : TEXCOORD0;
+				float2 uvTrans : TEXCOORD0;
 				V2F_SHADOW_CASTER;
 			};
 
-			sampler2D _TransparencyMap; float4 _TransparencyMap_ST;
-			half _TransparencyCutoff;
-
-			v2f vert(appdata_base v) {
+			v2f vert(appdata_full v) {
+				v = vertexmotion(v);
 				v2f o;
 				TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-				o.uv = TRANSFORM_TEX(v.texcoord, _TransparencyMap);
+				o.uvTrans = TRANSFORM_TEX(v.texcoord, _TransparencyMap);
 				return o;
 			}
 
 			float4 frag(v2f i) : SV_Target {
-				if (tex2D(_TransparencyMap, i.uv).r < _TransparencyCutoff) discard;
+				DISCARD_CUTOUT(i);
 				SHADOW_CASTER_FRAGMENT(i)
 			}
 			ENDCG

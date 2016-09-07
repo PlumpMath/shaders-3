@@ -11,6 +11,7 @@
 		[PowerSlider(3)] _DitherSpread ("Dither Radius", Range(0, 1)) = 0.0
 		[KeywordEnum(None, Breath)] _Motion ("Motion Type", Float) = 0
 		_MotionAmount ("Motion Amount", Float) = 1
+		_MotionMap ("Motion Map", 2D) = "white"
 	}
 
 
@@ -27,16 +28,33 @@
 		sampler2D _TransparencyMap; float4 _TransparencyMap_ST;
 		half _TransparencyCutoff;
 
+
 	#if !defined(_MOTION_NONE)
+
 		float _MotionAmount;
-	#endif
+		sampler2D _MotionMap; float4 _MotionMap_ST;
 
 		inline appdata_full vertexmotion(appdata_full v) {
-			#if defined(_MOTION_BREATH)
-			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * (_SinTime.w * _MotionAmount));
-			#endif
+			float4 uv;
+			uv.xy = TRANSFORM_TEX(v.texcoord, _MotionMap);
+			uv.zw = 0;
+			float amount = _MotionAmount * tex2Dlod(_MotionMap, uv);
+		#if defined(_MOTION_BREATH)
+			float t = _SinTime.w;
+			t += 1;
+			t /= 2;
+			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * (t * amount));
+		#endif
 			return v;
 		}
+
+		#define APPLY_MOTION(v) v = vertexmotion(v)
+
+	#else
+
+		#define APPLY_MOTION(v)
+
+	#endif
 
 		#define DISCARD_CUTOUT(i) if (tex2D(_TransparencyMap, i.uvTrans).r < _TransparencyCutoff) discard
 
@@ -76,7 +94,7 @@
 		#endif
 
 			v2f vert(appdata_full v, out float4 outpos : SV_POSITION) {
-				v = vertexmotion(v);
+				APPLY_MOTION(v);
 				v2f o;
 				o.pos = UnityObjectToClipPos(v.vertex);
 				outpos = o.pos;
@@ -145,7 +163,7 @@
 			};
 
 			v2f vert(appdata_full v) {
-				v = vertexmotion(v);
+				APPLY_MOTION(v);
 				v2f o;
 				TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
 				o.uvTrans = TRANSFORM_TEX(v.texcoord, _TransparencyMap);

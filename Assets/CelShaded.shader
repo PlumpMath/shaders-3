@@ -1,4 +1,6 @@
-﻿Shader "Custom/Cel Shaded" {
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
+Shader "Custom/Cel Shaded" {
 
 	Properties {
 		_ShadingMap ("Shading Map", 2D) = "white" {}
@@ -9,8 +11,9 @@
 		_ShadowFactor ("Shadow Factor", Float) = 0.5
 		[Toggle] _Dither ("Dither", Float) = 0
 		[PowerSlider(3)] _DitherSpread ("Dither Radius", Range(0, 1)) = 0.0
-		[KeywordEnum(None, Breath)] _Motion ("Motion Type", Float) = 0
+		[KeywordEnum(None, Breath, Grass)] _Motion ("Motion Type", Float) = 0
 		_MotionAmount ("Motion Amount", Float) = 1
+		_MotionSpeed ("Motion Speed", Float) = 1
 		_MotionMap ("Motion Map", 2D) = "white"
 	}
 
@@ -21,7 +24,7 @@
 
 		CGINCLUDE
 
-		#pragma shader_feature _MOTION_NONE _MOTION_BREATH
+		#pragma shader_feature _MOTION_NONE _MOTION_BREATH _MOTION_GRASS
 
 		#include "UnityCG.cginc"
 
@@ -32,18 +35,29 @@
 	#if !defined(_MOTION_NONE)
 
 		float _MotionAmount;
+		float _MotionSpeed;
 		sampler2D _MotionMap; float4 _MotionMap_ST;
+
+		#define PI 3.1415926535
+		#define TRIG(f, t) f(2 * PI * t)
+		#define SIN(t) TRIG(sin, t)
+		#define COS(t) TRIG(cos, t)
 
 		inline appdata_full vertexmotion(appdata_full v) {
 			float4 uv;
 			uv.xy = TRANSFORM_TEX(v.texcoord, _MotionMap);
 			uv.zw = 0;
 			float amount = _MotionAmount * tex2Dlod(_MotionMap, uv);
+			float t = _Time.y * _MotionSpeed;
 		#if defined(_MOTION_BREATH)
-			float t = _SinTime.w;
-			t += 1;
-			t /= 2;
-			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * (t * amount));
+			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * ((SIN(t) + 1) / 2 * amount));
+		#endif
+		#if defined(_MOTION_GRASS)
+			amount *= v.vertex.z;
+			float4 wpos = mul(unity_ObjectToWorld, v.vertex);
+			v.vertex.x += SIN(t + wpos.z) * amount;
+			v.vertex.y += COS(t + wpos.x) * amount;
+			v.vertex.z += COS(t / 2 + wpos.x + wpos.y) * amount / 3;
 		#endif
 			return v;
 		}

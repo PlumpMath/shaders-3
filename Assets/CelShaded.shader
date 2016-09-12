@@ -1,5 +1,4 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
+﻿
 Shader "Custom/Cel Shaded" {
 
 	Properties {
@@ -10,7 +9,9 @@ Shader "Custom/Cel Shaded" {
 		_TransparencyCutoff ("Transparency Cutoff", Range (0, 1)) = 0.5
 		_ShadowFactor ("Shadow Factor", Float) = 0.5
 		[Toggle] _Dither ("Dither", Float) = 0
-		[PowerSlider(3)] _DitherSpread ("Dither Radius", Range(0, 1)) = 0.0
+		[PowerSlider(3)] _DitherSpreadU ("Dither Radius U", Range(0, 1)) = 0.0
+		[PowerSlider(3)] _DitherSpreadV ("Dither Radius V", Range(0, 1)) = 0.0
+		[PowerSlider(3)] _DitherSpreadTrans ("Transparency Dither Radius", Range(0, 1)) = 0.0
 		[KeywordEnum(None, Breath, Grass)] _Motion ("Motion Type", Float) = 0
 		_MotionAmount ("Motion Amount", Float) = 1
 		_MotionSpeed ("Motion Speed", Float) = 1
@@ -53,11 +54,11 @@ Shader "Custom/Cel Shaded" {
 			v.vertex.xyz = v.vertex.xyz + (v.normal.xyz * ((SIN(t) + 1) / 2 * amount));
 		#endif
 		#if defined(_MOTION_GRASS)
-			amount *= v.vertex.z;
+			amount *= v.vertex.z * v.vertex.z;
 			float4 wpos = mul(unity_ObjectToWorld, v.vertex);
 			v.vertex.x += SIN(t + wpos.z) * amount;
 			v.vertex.y += COS(t + wpos.x) * amount;
-			v.vertex.z += COS(t / 2 + wpos.x + wpos.y) * amount / 3;
+			v.vertex.z += COS(t / 1.5 + wpos.x + wpos.y) * amount / 2;
 		#endif
 			return v;
 		}
@@ -70,7 +71,8 @@ Shader "Custom/Cel Shaded" {
 
 	#endif
 
-		#define DISCARD_CUTOUT(i) if (tex2D(_TransparencyMap, i.uvTrans).r < _TransparencyCutoff) discard
+		#define DISCARD_CUTOUT_CUTOFF(i, c) if (tex2D(_TransparencyMap, i.uvTrans).r < c) discard
+		#define DISCARD_CUTOUT(i) DISCARD_CUTOUT_CUTOFF(i, _TransparencyCutoff)
 
 		ENDCG
 
@@ -104,7 +106,9 @@ Shader "Custom/Cel Shaded" {
 			float _ShadowFactor;
 			float _ShadowOffset;
 		#if defined(_DITHER_ON)
-			float _DitherSpread;
+			float _DitherSpreadU;
+			float _DitherSpreadV;
+			float _DitherSpreadTrans;
 		#endif
 
 			v2f vert(appdata_full v, out float4 outpos : SV_POSITION) {
@@ -126,7 +130,12 @@ Shader "Custom/Cel Shaded" {
 				, UNITY_VPOS_TYPE screenPos : VPOS
 			#endif
 				) : SV_Target {
-				//alpha cutout
+			#if defined(_DITHER_ON)
+				screenPos.xy = floor(screenPos.xy) / 2;
+				float dither = frac(screenPos.x + screenPos.y) * 4;
+				dither -= 1;
+				DISCARD_CUTOUT_CUTOFF(i, _TransparencyCutoff + (dither * _DitherSpreadTrans));
+			#endif
 				DISCARD_CUTOUT(i);
 				//normal mapping
 				float3 texNorm = UnpackNormal(tex2D(_NormalMap, i.uvNorm));// * _NormalWeight;
@@ -148,10 +157,8 @@ Shader "Custom/Cel Shaded" {
 				uvShading += shadingOffset;
 				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
 			#if defined(_DITHER_ON)
-				screenPos.xy = floor(screenPos.xy) / 2;
-				float dither = frac(screenPos.x + screenPos.y) * 4;
-				dither -= 1;
-				uvShading += dither * _DitherSpread;
+				uvShading.x += dither * _DitherSpreadU;
+				uvShading.y += dither * _DitherSpreadV;
 			#endif
 				return tex2D(_ShadingMap, uvShading);
 			}

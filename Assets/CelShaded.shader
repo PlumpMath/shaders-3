@@ -9,6 +9,7 @@ Shader "Custom/Cel Shaded" {
 		_TransparencyCutoff ("Transparency Cutoff", Range (0, 1)) = 0.5
 		_ShadowFactor ("Shadow Factor", Float) = 0.5
 		[Toggle] _Dither ("Dither", Float) = 0
+		[NoScaleOffset] _DitherPattern ("Dither Pattern", 2D) = "gray" {}
 		[PowerSlider(3)] _DitherSpreadU ("Dither Radius U", Range(0, 1)) = 0.0
 		[PowerSlider(3)] _DitherSpreadV ("Dither Radius V", Range(0, 1)) = 0.0
 		[PowerSlider(3)] _DitherSpreadTrans ("Transparency Dither Radius", Range(0, 1)) = 0.0
@@ -106,6 +107,7 @@ Shader "Custom/Cel Shaded" {
 			float _ShadowFactor;
 			float _ShadowOffset;
 		#if defined(_DITHER_ON)
+			sampler2D _DitherPattern; float4 _DitherPattern_TexelSize;
 			float _DitherSpreadU;
 			float _DitherSpreadV;
 			float _DitherSpreadTrans;
@@ -131,10 +133,13 @@ Shader "Custom/Cel Shaded" {
 			#endif
 				) : SV_Target {
 			#if defined(_DITHER_ON)
-				screenPos.xy = floor(screenPos.xy) / 2;
+				/*screenPos.xy = floor(screenPos.xy) / 2;
 				float dither = frac(screenPos.x + screenPos.y) * 4;
+				dither -= 1;*/
+				float4 dither = tex2D(_DitherPattern, screenPos.xy * _DitherPattern_TexelSize.xy);
+				dither *= 2;
 				dither -= 1;
-				DISCARD_CUTOUT_CUTOFF(i, _TransparencyCutoff + (dither * _DitherSpreadTrans));
+				DISCARD_CUTOUT_CUTOFF(i, _TransparencyCutoff + (dither.z * _DitherSpreadTrans));
 			#endif
 				DISCARD_CUTOUT(i);
 				//normal mapping
@@ -157,8 +162,8 @@ Shader "Custom/Cel Shaded" {
 				uvShading += shadingOffset;
 				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
 			#if defined(_DITHER_ON)
-				uvShading.x += dither * _DitherSpreadU;
-				uvShading.y += dither * _DitherSpreadV;
+				uvShading.x += dither.x * _DitherSpreadU;
+				uvShading.y += dither.y * _DitherSpreadV;
 			#endif
 				return tex2D(_ShadingMap, uvShading);
 			}

@@ -1,6 +1,6 @@
 fileFormatVersion: 2
 guid: 0dfced7baebdd504aab93bf674d6c4fd
-timeCreated: 1472237881
+timeCreated: 1473827247
 licenseType: Free
 ShaderImporter:
   defaultTextures:
@@ -8,6 +8,8 @@ ShaderImporter:
   - _ShadingOffsetMap: {fileID: 2800000, guid: 0d8d9c3eac9e971419c5edddaa2ac297, type: 3}
   - _NormalMap: {instanceID: 0}
   - _TransparencyMap: {instanceID: 0}
+  - _DitherPattern: {fileID: 2800000, guid: fde2fc9389657ca438b8734a6232a788, type: 3}
+  - _MotionMap: {instanceID: 0}
   userData: 
   assetBundleName: 
   assetBundleVariant: 

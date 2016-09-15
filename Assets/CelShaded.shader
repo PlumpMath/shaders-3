@@ -85,12 +85,15 @@ Shader "Custom/Cel Shaded" {
 
 			#pragma shader_feature _DITHER_ON
 
+		#if defined(_DITHER_ON)
 			#pragma target 3.0
+		#endif
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile_fwdbase
 
 			#include "AutoLight.cginc"
+			#include "Dither.cginc"
 
 			struct v2f {
 				float4 pos : TEXCOORD0;
@@ -106,17 +109,13 @@ Shader "Custom/Cel Shaded" {
 			sampler2D _NormalMap; float4 _NormalMap_ST;
 			float _ShadowFactor;
 			float _ShadowOffset;
-		#if defined(_DITHER_ON)
-			sampler2D _DitherPattern; float4 _DitherPattern_TexelSize;
-			float _DitherSpreadU;
-			float _DitherSpreadV;
+			DITHER_PROPERTIES;
 			float _DitherSpreadTrans;
-		#endif
 
 			v2f vert(appdata_full v, out float4 outpos : SV_POSITION) {
 				APPLY_MOTION(v);
 				v2f o;
-				o.pos = UnityObjectToClipPos(v.vertex);
+				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 				outpos = o.pos;
 				TANGENT_SPACE_ROTATION;
 				o.lightDirection = mul(rotation, ObjSpaceLightDir(v.vertex));
@@ -127,21 +126,12 @@ Shader "Custom/Cel Shaded" {
 				return o;
 			}
 
-			fixed4 frag(v2f i
-			#if defined(_DITHER_ON)
-				, UNITY_VPOS_TYPE screenPos : VPOS
-			#endif
-				) : SV_Target {
-			#if defined(_DITHER_ON)
+			fixed4 frag(v2f i DITHER_FRAGIN) : SV_Target {
 				/*screenPos.xy = floor(screenPos.xy) / 2;
 				float dither = frac(screenPos.x + screenPos.y) * 4;
 				dither -= 1;*/
-				float4 dither = tex2D(_DitherPattern, screenPos.xy * _DitherPattern_TexelSize.xy);
-				dither *= 2;
-				dither -= 1;
+				float4 dither = COMPUTE_DITHER;
 				DISCARD_CUTOUT_CUTOFF(i, _TransparencyCutoff + (dither.z * _DitherSpreadTrans));
-			#endif
-				DISCARD_CUTOUT(i);
 				//normal mapping
 				float3 texNorm = UnpackNormal(tex2D(_NormalMap, i.uvNorm));// * _NormalWeight;
 				//lighting
@@ -161,10 +151,8 @@ Shader "Custom/Cel Shaded" {
 				float2 uvShading = float2(shading * offset.z, 0);
 				uvShading += shadingOffset;
 				uvShading = TRANSFORM_TEX(uvShading, _ShadingMap);
-			#if defined(_DITHER_ON)
 				uvShading.x += dither.x * _DitherSpreadU;
 				uvShading.y += dither.y * _DitherSpreadV;
-			#endif
 				return tex2D(_ShadingMap, uvShading);
 			}
 
@@ -181,10 +169,8 @@ Shader "Custom/Cel Shaded" {
 			#pragma fragment frag
 			#pragma multi_compile_shadowcaster
 
-			#include "UnityCG.cginc"
-
 			struct v2f {
-				float2 uvTrans : TEXCOORD0;
+				float2 uvTrans : TEXCOORD1;
 				V2F_SHADOW_CASTER;
 			};
 
